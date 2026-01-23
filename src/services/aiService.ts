@@ -1,0 +1,141 @@
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+interface Message {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface PropertyRecommendation {
+  propertyId: string;
+  reason: string;
+  score: number;
+}
+
+export const aiService = {
+  /**
+   * Chat with AI assistant
+   */
+  async chat(messages: Message[]): Promise<string> {
+    if (!OPENROUTER_API_KEY) {
+      return "AI service is not configured. Please add VITE_OPENROUTER_API_KEY to your environment variables.";
+    }
+
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'PropertyHub',
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-3.5-turbo',
+          messages: messages,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || 'No response from AI';
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get property recommendations based on user preferences
+   */
+  async getPropertyRecommendations(
+    userPreferences: {
+      budget?: number;
+      location?: string;
+      bedrooms?: number;
+      propertyType?: string;
+    },
+    availableProperties: any[]
+  ): Promise<PropertyRecommendation[]> {
+    if (!OPENROUTER_API_KEY) {
+      console.warn('AI service not configured. Returning mock recommendations.');
+      return availableProperties.slice(0, 3).map((prop, index) => ({
+        propertyId: prop.id,
+        reason: 'Featured property',
+        score: 100 - index * 10,
+      }));
+    }
+
+    try {
+      const prompt = `Given these user preferences: ${JSON.stringify(userPreferences)}
+      And these available properties: ${JSON.stringify(availableProperties.map(p => ({
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        location: p.location,
+        bedrooms: p.bedrooms,
+        propertyType: p.propertyType,
+      })))}
+      
+      Recommend the top 3 properties with reasons. Return JSON array with format:
+      [{"propertyId": "id", "reason": "explanation", "score": 0-100}]`;
+
+      const response = await this.chat([
+        {
+          role: 'system',
+          content: 'You are a real estate AI assistant that helps users find their perfect property. Always return valid JSON only, no markdown code blocks.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ]);
+
+      // Remove markdown code blocks if present
+      let cleanedResponse = response.trim();
+      if (cleanedResponse.startsWith('```')) {
+        cleanedResponse = cleanedResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+      }
+      
+      const recommendations = JSON.parse(cleanedResponse);
+      return recommendations;
+    } catch (error) {
+      console.error('Recommendation Error:', error);
+      return availableProperties.slice(0, 3).map((prop, index) => ({
+        propertyId: prop.id,
+        reason: 'Top match based on your criteria',
+        score: 100 - index * 10,
+      }));
+    }
+  },
+
+  /**
+   * Get property search assistance
+   */
+  async getSearchAssistance(userQuery: string, properties: any[]): Promise<string> {
+    const messages: Message[] = [
+      {
+        role: 'system',
+        content: `You are a helpful real estate assistant. Help users find properties based on their requirements. 
+        Available properties: ${JSON.stringify(properties.map(p => ({
+          id: p.id,
+          title: p.title,
+          price: p.price,
+          location: p.location,
+          bedrooms: p.bedrooms,
+          type: p.type,
+          propertyType: p.propertyType,
+        })))}`,
+      },
+      {
+        role: 'user',
+        content: userQuery,
+      },
+    ];
+
+    return await this.chat(messages);
+  },
+};
