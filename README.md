@@ -59,14 +59,8 @@ cd server
 npm install
 ```
 
-Create `server/.env` (see `.env.example`) with:
-
-```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
-PORT=4000
-CLIENT_ORIGIN=http://localhost:5173
-JWT_SECRET=some-long-random-secret
-```
+Create `server/.env` based on `server/.env.example` and fill in your own values  
+(database connection string, JWT secret, client origin, etc.).
 
 Then run migrations and (optionally) seed mock data:
 
@@ -88,11 +82,11 @@ From the project root:
 
 ```bash
 cd ..
-echo "VITE_API_URL=http://localhost:4000" > .env
+# create a .env file and define VITE_API_URL there
 npm run dev
 ```
 
-Open your browser at `http://localhost:5173`.
+Open your browser at your local Vite dev URL.
 
 ## 📜 Available Scripts
 
@@ -183,21 +177,20 @@ The application includes authentication with role-based access control:
 
 ### Frontend (`.env` at repo root)
 
-```env
-VITE_API_URL=http://localhost:4000        # or your deployed backend URL
-VITE_MAP_API_KEY=your_map_api_key_here    # if you add a map provider key
-```
+Define your public frontend variables here, for example:
+
+- `VITE_API_URL` – URL of your backend API  
+- `VITE_MAP_API_KEY` – map provider key (if needed)
 
 ### Backend (`server/.env`)
 
-```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
-PORT=4000
-CLIENT_ORIGIN=http://localhost:5173
-JWT_SECRET=some-long-random-secret
-```
+Keep all sensitive values only in `server/.env` (not in this README), for example:
 
-> **Note**: Never commit `server/.env`. It is ignored via `.gitignore`.
+- `DATABASE_URL` – full PostgreSQL connection string  
+- `CLIENT_ORIGIN` – allowed frontend origin  
+- `JWT_SECRET` – secret used to sign JWTs
+
+> **Note**: `server/.env` is already ignored via `.gitignore` and should never be committed.
 
 ## 📝 License
 
