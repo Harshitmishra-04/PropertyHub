@@ -6,13 +6,6 @@ import { Star, ThumbsUp } from "lucide-react";
 import { useReviews } from "@/contexts/ReviewsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface PropertyReviewsProps {
   propertyId: string;
@@ -23,7 +16,6 @@ const PropertyReviews = ({ propertyId }: PropertyReviewsProps) => {
   const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const propertyReviews = getPropertyReviews(propertyId);
   const averageRating = getAverageRating(propertyId);
@@ -50,7 +42,6 @@ const PropertyReviews = ({ propertyId }: PropertyReviewsProps) => {
     toast.success("Review submitted successfully!");
     setComment("");
     setRating(5);
-    setIsDialogOpen(false);
   };
 
   return (
@@ -80,59 +71,15 @@ const PropertyReviews = ({ propertyId }: PropertyReviewsProps) => {
               </div>
             )}
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Write a Review</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Write Your Review</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium">Your Rating</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setRating(star)}
-                        className="transition-transform hover:scale-110"
-                      >
-                        <Star
-                          className={`h-8 w-8 ${
-                            star <= rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-muted-foreground"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium">Your Review</label>
-                  <Textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Share your experience with this property..."
-                    rows={5}
-                  />
-                </div>
-                <Button onClick={handleSubmitReview} className="w-full">
-                  Submit Review
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
         {propertyReviews.length === 0 ? (
-          <p className="py-8 text-center text-muted-foreground">
-            No reviews yet. Be the first to review!
+          <p className="pb-6 text-sm text-muted-foreground">
+            No reviews yet. Be the first to review this property.
           </p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 pb-6">
             {propertyReviews.map((review) => (
               <div key={review.id} className="border-b pb-6 last:border-0">
                 <div className="mb-2 flex items-start justify-between">
@@ -167,6 +114,47 @@ const PropertyReviews = ({ propertyId }: PropertyReviewsProps) => {
             ))}
           </div>
         )}
+
+        <div className="mt-4 border-t pt-4 space-y-4">
+          <p className="text-sm font-medium">
+            {user ? "Write a review" : "Login to write a review"}
+          </p>
+          <div>
+            <p className="mb-2 text-sm text-muted-foreground">Your Rating</p>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className="transition-transform hover:scale-110"
+                  disabled={!user}
+                >
+                  <Star
+                    className={`h-7 w-7 ${
+                      star <= rating
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm text-muted-foreground">Your Review</p>
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your experience with this property..."
+              rows={4}
+              disabled={!user}
+            />
+          </div>
+          <Button onClick={handleSubmitReview} className="w-full md:w-auto" disabled={!user}>
+            Submit Review
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

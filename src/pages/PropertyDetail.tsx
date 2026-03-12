@@ -71,31 +71,39 @@ const PropertyDetail = () => {
     );
   }
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
-    const buyerName = formData.get('name') as string;
-    const buyerEmail = formData.get('email') as string;
-    const buyerPhone = formData.get('phone') as string;
-    const message = formData.get('message') as string;
+    const buyerName = (formData.get('name') as string) || '';
+    const buyerEmail = (formData.get('email') as string) || '';
+    const buyerPhone = (formData.get('phone') as string) || '';
+    const message = (formData.get('message') as string) || '';
+
+    if (!buyerName.trim() || !buyerEmail.trim() || !buyerPhone.trim()) {
+      toast.error("Please fill in your name, email and phone.");
+      return;
+    }
 
     if (id && property) {
-      incrementEnquiries(id);
-      
-      addLead({
-        propertyId: id,
-        propertyTitle: property.title,
-        sellerId: property.sellerInfo.id,
-        sellerName: property.sellerInfo.name,
-        buyerName: buyerName || 'Anonymous',
-        buyerEmail: buyerEmail || '',
-        buyerPhone: buyerPhone || '',
-        message: message || undefined,
-      });
+      try {
+        await incrementEnquiries(id);
+        await addLead({
+          propertyId: id,
+          propertyTitle: property.title,
+          sellerId: property.sellerInfo.id,
+          sellerName: property.sellerInfo.name,
+          buyerName: buyerName.trim(),
+          buyerEmail: buyerEmail.trim(),
+          buyerPhone: buyerPhone.trim(),
+          message: message.trim() || undefined,
+        });
+        toast.success("Your inquiry has been sent successfully!");
+        (e.target as HTMLFormElement).reset();
+      } catch (error) {
+        console.error("Inquiry error:", error);
+        toast.error("Failed to send inquiry. Please try again.");
+      }
     }
-    
-    toast.success("Your inquiry has been sent successfully!");
-    (e.target as HTMLFormElement).reset();
   };
 
   const handleShare = async () => {
@@ -551,9 +559,17 @@ const PropertyDetail = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
-                <Button variant="outline" className="w-full gap-2">
-                  <Mail className="h-4 w-4" />
-                  Send Email
+                <Button variant="outline" className="w-full gap-2" asChild>
+                  <a
+                    href={`mailto:${property.sellerInfo.email}?subject=${encodeURIComponent(
+                      `Inquiry about ${property.title}`
+                    )}&body=${encodeURIComponent(
+                      `Hi ${property.sellerInfo.name},\n\nI am interested in your property "${property.title}" located at ${property.location}. Please share more details.\n\nThank you,\n`
+                    )}`}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Send Email
+                  </a>
                 </Button>
                 <div className="mt-6 rounded-lg bg-muted p-4">
                   <p className="text-sm text-muted-foreground">

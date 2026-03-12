@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import type { Review } from "@/data/mockReviews";
 import { addReviewLocal, listReviews, markReviewHelpful, subscribeLocalDb } from "@/lib/localDb";
-import { apiGet, apiPost } from "@/lib/api";
 
 interface ReviewsContextType {
   reviews: Review[];
@@ -18,7 +17,6 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchReviews = useCallback(async () => {
     try {
-      // Initially load from local to keep behavior
       setReviews(listReviews());
     } catch (error) {
       console.error('Error fetching reviews:', error);
@@ -49,21 +47,11 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Rating must be between 1 and 5');
       }
 
-      const payload = {
+      const newReview = addReviewLocal({
         ...review,
         userName: review.userName.trim(),
         comment: review.comment?.trim() || "",
-      };
-
-      try {
-        const created = await apiPost<Review>(`/properties/${review.propertyId}/reviews`, payload);
-        setReviews((prev) => [created, ...prev]);
-        return;
-      } catch (apiError) {
-        console.warn("Falling back to local addReview:", apiError);
-      }
-
-      const newReview = addReviewLocal(payload);
+      });
       setReviews((prev) => [newReview, ...prev]);
     } catch (error) {
       console.error('Error adding review:', error);
@@ -84,18 +72,6 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
       if (!review) {
         throw new Error('Review not found');
       }
-      try {
-        const updated = await apiPost<Review>(`/reviews/${reviewId}/helpful`, {});
-        setReviews((prev) =>
-          prev.map((review) =>
-            review.id === reviewId ? updated : review
-          )
-        );
-        return;
-      } catch (apiError) {
-        console.warn("Falling back to local markHelpful:", apiError);
-      }
-
       markReviewHelpful(reviewId);
       setReviews((prev) =>
         prev.map((review) =>

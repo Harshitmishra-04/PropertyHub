@@ -20,7 +20,22 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Thank you for contacting us! We'll get back to you soon.");
+    // Open default mail client with prefilled subject/body
+    const subject = formData.subject || "PropertyHub Contact Request";
+    const bodyLines = [
+      `Name: ${formData.name}`,
+      `Email: ${formData.email}`,
+      `Phone: ${formData.phone || "N/A"}`,
+      "",
+      "Message:",
+      formData.message,
+    ];
+    const mailto = `mailto:info@propertyhub.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+      bodyLines.join("\n")
+    )}`;
+    window.location.href = mailto;
+
+    toast.success("Thank you for contacting us! Your email client will open shortly.");
     setFormData({
       name: "",
       email: "",
