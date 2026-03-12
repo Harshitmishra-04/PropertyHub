@@ -7,6 +7,7 @@ import {
   subscribeLocalDb,
   updateLeadLocal,
 } from "@/lib/localDb";
+import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 
 export interface Lead {
   id: string;
@@ -41,16 +42,27 @@ export const LeadsProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchLeads = useCallback(async () => {
     try {
+      if (!user) {
+        setLeads([]);
+        return;
+      }
+
+      try {
+        const apiLeads = await apiGet<Lead[]>("/leads");
+        setLeads(apiLeads);
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local leads:", apiError);
+      }
+
       const all = listLeads();
-      if (user?.role === "admin") {
+      if (user.role === "admin") {
         setLeads(all);
-        return;
-      }
-      if (user?.role === "seller") {
+      } else if (user.role === "seller") {
         setLeads(all.filter((l) => l.sellerId === user.id));
-        return;
+      } else {
+        setLeads([]);
       }
-      setLeads([]);
     } catch (error) {
       console.error('Error fetching leads:', error);
       setLeads([]);
@@ -79,14 +91,25 @@ export const LeadsProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Property ID is required');
       }
 
-      const newLead = addLeadLocal({
+      const payload = {
         ...lead,
         buyerName: lead.buyerName.trim(),
         buyerEmail: lead.buyerEmail.toLowerCase().trim(),
         buyerPhone: lead.buyerPhone.trim(),
         message: lead.message?.trim() || undefined,
-      });
-      // Only show instantly if viewer is allowed to see it
+      };
+
+      try {
+        const created = await apiPost<Lead>("/leads", payload);
+        if (user?.role === "admin" || (user?.role === "seller" && created.sellerId === user.id)) {
+          setLeads((prev) => [created, ...prev]);
+        }
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local addLead:", apiError);
+      }
+
+      const newLead = addLeadLocal(payload);
       if (user?.role === "admin" || (user?.role === "seller" && newLead.sellerId === user.id)) {
         setLeads((prev) => [newLead, ...prev]);
       }
@@ -98,8 +121,17 @@ export const LeadsProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLeadStatus = async (leadId: string, status: Lead['status'], notes?: string) => {
     try {
-      updateLeadLocal(leadId, { status, notes: notes?.trim() || undefined });
+      try {
+        const updated = await apiPatch<Lead>(`/leads/${leadId}`, { status, notes: notes?.trim() || undefined });
+        setLeads(prev =>
+          prev.map(lead => (lead.id === leadId ? updated : lead))
+        );
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local updateLeadStatus:", apiError);
+      }
 
+      updateLeadLocal(leadId, { status, notes: notes?.trim() || undefined });
       setLeads(prev =>
         prev.map(lead =>
           lead.id === leadId
@@ -123,6 +155,14 @@ export const LeadsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteLead = async (leadId: string) => {
     try {
+      try {
+        await apiDelete(`/leads/${leadId}`);
+        setLeads(prev => prev.filter(lead => lead.id !== leadId));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local deleteLead:", apiError);
+      }
+
       deleteLeadLocal(leadId);
       setLeads(prev => prev.filter(lead => lead.id !== leadId));
     } catch (error) {

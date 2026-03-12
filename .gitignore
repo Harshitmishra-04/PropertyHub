@@ -1,16 +1,20 @@
-# Dependencies
+## Dependencies
 node_modules/
 /.pnp
 .pnp.js
 
-# Testing
+## Testing
 /coverage
 
-# Production
+## Production builds
 /build
 /dist
+server/dist
 
-# Misc
+## Backend dependencies
+server/node_modules/
+
+## Misc
 .DS_Store
 .env.local
 .env.development.local
@@ -28,7 +32,7 @@ yarn-error.log*
 *.swo
 *~
 
-# AI Tool metadata (to prevent showing AI tool usage in GitHub)
+## AI Tool metadata (to prevent showing AI tool usage in GitHub)
 .cursor/
 .cursorrules
 .cursorignore
@@ -38,15 +42,18 @@ yarn-error.log*
 .ai/
 .cursor-settings.json
 
-# Environment variables
+## Environment variables
 .env
 .env.local
 .env.*.local
+server/.env
 
-# Logs
+## Logs
 logs
 *.log
 
-# OS files
+## OS files
 Thumbs.db
 .DS_Store
+
+PROJECT_WORKFLOW.md

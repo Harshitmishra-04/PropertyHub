@@ -1,0 +1,128 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  role         String   @default("user") // "admin" | "user" | "seller"
+  passwordHash String
+  provider     String   @default("email")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  properties   Property[] @relation("UserProperties")
+  leads        Lead[]     @relation("UserLeads")
+  favorites    Favorite[]
+  comparisons  Comparison[]
+  reviews      Review[]
+}
+
+model Property {
+  id                String   @id @default(uuid())
+  title             String
+  price             Float
+  location          String
+  city              String
+  locality          String
+  bedrooms          Int
+  bathrooms         Int
+  area              Float
+  image             String
+  type              String   // "sale" | "rent" | "leasing"
+  propertyType      String   // "Apartment" | "Villa" | "Plot" | "Commercial" | "House"
+  description       String
+  amenities         Json
+  images            Json
+  coordinates       Json
+  approvalStatus    String   @default("pending")
+  constructionStatus String  @default("ready")
+  floorPlan         String? 
+  virtualTour       String?
+  sellerInfo        Json
+  featured          Boolean  @default(false)
+  listingPackage    String   @default("free")
+  views             Int      @default(0)
+  enquiries         Int      @default(0)
+  neighborhood      Json?
+  facing            String?
+  furnished         String?
+  parking           Int?
+  floor             Int?
+  totalFloors       Int?
+  age               Int?
+  bhk               Int?
+
+  sellerId          String? 
+  seller            User?    @relation("UserProperties", fields: [sellerId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  reviews           Review[]
+  leads             Lead[]
+  favorites         Favorite[]
+  comparisons       Comparison[]
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+
+  rating     Int
+  comment    String
+  date       DateTime @default(now())
+  helpful    Int      @default(0)
+}
+
+model Lead {
+  id            String   @id @default(uuid())
+  property      Property @relation(fields: [propertyId], references: [id])
+  propertyId    String
+
+  seller        User?    @relation("UserLeads", fields: [sellerId], references: [id])
+  sellerId      String?
+
+  sellerName    String
+  buyerName     String
+  buyerEmail    String
+  buyerPhone    String
+  message       String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  notes         String?
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+model Comparison {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+

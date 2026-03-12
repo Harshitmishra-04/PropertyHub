@@ -34,23 +34,55 @@ const LocationPickerContent = ({ onLocationSelect, initialLat = 20.5937, initial
   const [position, setPosition] = useState<[number, number]>([validLat, validLng]);
   const [address, setAddress] = useState("");
 
-  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+  const updateLocation = useCallback((lat: number, lng: number, displayAddress: string) => {
     setPosition([lat, lng]);
-    
+    setAddress(displayAddress);
+    onLocationSelect(lat, lng, displayAddress);
+  }, [onLocationSelect]);
+
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
       );
       const data = await response.json();
       const fetchedAddress = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      setAddress(fetchedAddress);
-      onLocationSelect(lat, lng, fetchedAddress);
+      updateLocation(lat, lng, fetchedAddress);
     } catch (error) {
       const defaultAddress = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      setAddress(defaultAddress);
-      onLocationSelect(lat, lng, defaultAddress);
+      updateLocation(lat, lng, defaultAddress);
     }
-  }, [onLocationSelect]);
+  }, [updateLocation]);
+
+  const geocodeAddress = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&limit=1`
+      );
+      const results = await response.json();
+
+      if (Array.isArray(results) && results.length > 0) {
+        const best = results[0];
+        const lat = parseFloat(best.lat);
+        const lng = parseFloat(best.lon);
+        const label = best.display_name || trimmed;
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          updateLocation(lat, lng, label);
+          return;
+        }
+      }
+
+      // Fallback: keep text but use existing coordinates
+      updateLocation(position[0], position[1], trimmed);
+    } catch {
+      // Network or API error – still keep the typed address
+      updateLocation(position[0], position[1], trimmed);
+    }
+  }, [position, updateLocation]);
 
   const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newAddress = e.target.value;
@@ -61,6 +93,21 @@ const LocationPickerContent = ({ onLocationSelect, initialLat = 20.5937, initial
     }
   }, [position, onLocationSelect]);
 
+  const handleAddressBlur = useCallback(() => {
+    if (address.trim()) {
+      void geocodeAddress(address);
+    }
+  }, [address, geocodeAddress]);
+
+  const handleAddressKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (address.trim()) {
+        void geocodeAddress(address);
+      }
+    }
+  }, [address, geocodeAddress]);
+
   return (
     <div className="space-y-4">
       <div>
@@ -69,6 +116,8 @@ const LocationPickerContent = ({ onLocationSelect, initialLat = 20.5937, initial
           type="text"
           value={address}
           onChange={handleAddressChange}
+          onBlur={handleAddressBlur}
+          onKeyDown={handleAddressKeyDown}
           placeholder="Address will appear here..."
           className="mt-2"
         />

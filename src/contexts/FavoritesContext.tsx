@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { getFavorites as getFavoritesForUser, setFavorites as setFavoritesForUser, subscribeLocalDb } from '@/lib/localDb';
+import { apiGet, apiPost, apiDelete } from "@/lib/api";
 
 interface FavoritesContextType {
   favorites: string[];
@@ -23,6 +24,14 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      try {
+        const apiFavs = await apiGet<{ propertyId: string }[]>("/favorites");
+        setFavorites(apiFavs.map(f => f.propertyId));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local favorites:", apiError);
+      }
+
       setFavorites(getFavoritesForUser(user.id));
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -47,6 +56,16 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Invalid property ID');
       }
 
+      try {
+        await apiPost("/favorites", { propertyId });
+        setFavorites(prev =>
+          prev.includes(propertyId) ? prev : [...prev, propertyId]
+        );
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local addFavorite:", apiError);
+      }
+
       const current = getFavoritesForUser(user.id);
       if (current.includes(propertyId)) return;
       const next = [...current, propertyId];
@@ -64,6 +83,14 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      try {
+        await apiDelete(`/favorites/${propertyId}`);
+        setFavorites(prev => prev.filter(id => id !== propertyId));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local removeFavorite:", apiError);
+      }
+
       const current = getFavoritesForUser(user.id);
       const next = current.filter((id) => id !== propertyId);
       setFavoritesForUser(user.id, next);

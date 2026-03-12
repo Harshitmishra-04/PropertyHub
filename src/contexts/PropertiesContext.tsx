@@ -7,6 +7,7 @@ import {
   subscribeLocalDb,
   updatePropertyLocal,
 } from "@/lib/localDb";
+import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 
 export interface SellerInfo {
   id: string;
@@ -79,97 +80,67 @@ interface PropertiesContextType {
 
 const PropertiesContext = createContext<PropertiesContextType | undefined>(undefined);
 
-// Helper function to convert database property to app property
-const mapDbPropertyToProperty = (dbProp: any): Property => {
-  const coordinates = typeof dbProp.coordinates === 'object' 
-    ? dbProp.coordinates 
-    : (typeof dbProp.coordinates === 'string' ? JSON.parse(dbProp.coordinates) : { lat: 0, lng: 0 });
-  
-  const sellerInfo = typeof dbProp.seller_info === 'object'
-    ? dbProp.seller_info
-    : (typeof dbProp.seller_info === 'string' ? JSON.parse(dbProp.seller_info) : {});
+// Helper function to convert API property (Prisma) to app property
+const mapApiPropertyToProperty = (apiProp: any): Property => {
+  const coordinates =
+    typeof apiProp.coordinates === "object"
+      ? apiProp.coordinates
+      : typeof apiProp.coordinates === "string"
+      ? JSON.parse(apiProp.coordinates)
+      : { lat: 0, lng: 0 };
 
-  const neighborhood = dbProp.neighborhood 
-    ? (typeof dbProp.neighborhood === 'object' ? dbProp.neighborhood : JSON.parse(dbProp.neighborhood))
+  const sellerInfo =
+    typeof apiProp.sellerInfo === "object"
+      ? apiProp.sellerInfo
+      : typeof apiProp.sellerInfo === "string"
+      ? JSON.parse(apiProp.sellerInfo)
+      : {};
+
+  const neighborhood = apiProp.neighborhood
+    ? typeof apiProp.neighborhood === "object"
+      ? apiProp.neighborhood
+      : JSON.parse(apiProp.neighborhood)
     : undefined;
 
   return {
-    id: dbProp.id,
-    title: dbProp.title || 'Untitled Property',
-    price: Number(dbProp.price) || 0,
-    location: dbProp.location || '',
-    city: dbProp.city || '',
-    locality: dbProp.locality || '',
-    bedrooms: Number(dbProp.bedrooms) || 0,
-    bathrooms: Number(dbProp.bathrooms) || 0,
-    area: Number(dbProp.area) || 0,
-    image: dbProp.image || '/placeholder.svg',
-    type: dbProp.type || 'sale',
-    propertyType: dbProp.property_type || 'Apartment',
-    description: dbProp.description || '',
-    amenities: Array.isArray(dbProp.amenities) ? dbProp.amenities : [],
-    images: Array.isArray(dbProp.images) && dbProp.images.length > 0 
-      ? dbProp.images 
-      : [dbProp.image || '/placeholder.svg'],
-    coordinates: coordinates,
-    approvalStatus: dbProp.approval_status || 'pending',
-    constructionStatus: dbProp.construction_status || 'ready',
-    floorPlan: dbProp.floor_plan || undefined,
-    virtualTour: dbProp.virtual_tour || undefined,
+    id: apiProp.id,
+    title: apiProp.title || "Untitled Property",
+    price: Number(apiProp.price) || 0,
+    location: apiProp.location || "",
+    city: apiProp.city || "",
+    locality: apiProp.locality || "",
+    bedrooms: Number(apiProp.bedrooms) || 0,
+    bathrooms: Number(apiProp.bathrooms) || 0,
+    area: Number(apiProp.area) || 0,
+    image: apiProp.image || "/placeholder.svg",
+    type: apiProp.type || "sale",
+    propertyType: apiProp.propertyType || "Apartment",
+    description: apiProp.description || "",
+    amenities: Array.isArray(apiProp.amenities) ? apiProp.amenities : [],
+    images:
+      Array.isArray(apiProp.images) && apiProp.images.length > 0
+        ? apiProp.images
+        : [apiProp.image || "/placeholder.svg"],
+    coordinates,
+    approvalStatus: apiProp.approvalStatus || "pending",
+    constructionStatus: apiProp.constructionStatus || "ready",
+    floorPlan: apiProp.floorPlan || undefined,
+    virtualTour: apiProp.virtualTour || undefined,
     sellerInfo: sellerInfo as SellerInfo,
-    featured: Boolean(dbProp.featured),
-    listingPackage: dbProp.listing_package || 'free',
-    createdAt: dbProp.created_at || new Date().toISOString(),
-    updatedAt: dbProp.updated_at || new Date().toISOString(),
-    views: Number(dbProp.views) || 0,
-    enquiries: Number(dbProp.enquiries) || 0,
-    neighborhood: neighborhood,
-    facing: dbProp.facing || undefined,
-    furnished: dbProp.furnished || undefined,
-    parking: dbProp.parking ? Number(dbProp.parking) : undefined,
-    floor: dbProp.floor ? Number(dbProp.floor) : undefined,
-    totalFloors: dbProp.total_floors ? Number(dbProp.total_floors) : undefined,
-    age: dbProp.age ? Number(dbProp.age) : undefined,
-    bhk: dbProp.bhk ? Number(dbProp.bhk) : undefined,
-  };
-};
-
-// Helper function to convert app property to database property
-const mapPropertyToDbProperty = (property: Partial<Property>, userId?: string) => {
-  return {
-    title: property.title,
-    price: property.price,
-    location: property.location,
-    city: property.city,
-    locality: property.locality,
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms,
-    area: property.area,
-    image: property.image,
-    type: property.type,
-    property_type: property.propertyType,
-    description: property.description || '',
-    amenities: property.amenities || [],
-    images: property.images || [],
-    coordinates: property.coordinates || { lat: 0, lng: 0 },
-    approval_status: property.approvalStatus || 'pending',
-    construction_status: property.constructionStatus || 'ready',
-    floor_plan: property.floorPlan || null,
-    virtual_tour: property.virtualTour || null,
-    seller_info: property.sellerInfo || {},
-    featured: property.featured || false,
-    listing_package: property.listingPackage || 'free',
-    views: property.views || 0,
-    enquiries: property.enquiries || 0,
-    neighborhood: property.neighborhood || null,
-    facing: property.facing || null,
-    furnished: property.furnished || null,
-    parking: property.parking || null,
-    floor: property.floor || null,
-    total_floors: property.totalFloors || null,
-    age: property.age || null,
-    bhk: property.bhk || null,
-    seller_id: userId || null,
+    featured: Boolean(apiProp.featured),
+    listingPackage: apiProp.listingPackage || "free",
+    createdAt: apiProp.createdAt || new Date().toISOString(),
+    updatedAt: apiProp.updatedAt || new Date().toISOString(),
+    views: Number(apiProp.views) || 0,
+    enquiries: Number(apiProp.enquiries) || 0,
+    neighborhood,
+    facing: apiProp.facing || undefined,
+    furnished: apiProp.furnished || undefined,
+    parking: apiProp.parking ? Number(apiProp.parking) : undefined,
+    floor: apiProp.floor ? Number(apiProp.floor) : undefined,
+    totalFloors: apiProp.totalFloors ? Number(apiProp.totalFloors) : undefined,
+    age: apiProp.age ? Number(apiProp.age) : undefined,
+    bhk: apiProp.bhk ? Number(apiProp.bhk) : undefined,
   };
 };
 
@@ -181,17 +152,36 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
   const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
-      const all = listProperties();
+      // Try backend API first
+      try {
+        const apiProps = await apiGet<any[]>("/properties");
+        const mapped = apiProps.map(mapApiPropertyToProperty);
 
-      // Match previous behavior: guests see approved only; non-admin sees approved or own.
-      const filtered = all.filter((p) => {
+        const filtered = mapped.filter((p) => {
+          if (user?.role === "admin") return true;
+          if (!user) return p.approvalStatus === "approved";
+          const isOwn =
+            p.sellerInfo?.id === user.id || p.sellerInfo?.email === user.email;
+          return p.approvalStatus === "approved" || isOwn;
+        });
+
+        setProperties(filtered);
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local properties:", apiError);
+      }
+
+      // Fallback to local storage
+      const allLocal = listProperties();
+      const filteredLocal = allLocal.filter((p) => {
         if (user?.role === "admin") return true;
         if (!user) return p.approvalStatus === "approved";
-        const isOwn = p.sellerInfo?.id === user.id || p.sellerInfo?.email === user.email;
+        const isOwn =
+          p.sellerInfo?.id === user.id || p.sellerInfo?.email === user.email;
         return p.approvalStatus === "approved" || isOwn;
       });
 
-      setProperties(filtered);
+      setProperties(filteredLocal);
     } catch (error: any) {
       console.error('Error fetching properties:', error);
       setProperties([]);
@@ -219,6 +209,19 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Location is required');
       }
 
+      // Try backend first
+      try {
+        const created = await apiPost<any>("/properties", {
+          ...property,
+          approvalStatus: "pending",
+        });
+        const mapped = mapApiPropertyToProperty(created);
+        setProperties((prev) => [mapped, ...prev]);
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local addProperty:", apiError);
+      }
+
       const newProperty = addPropertyLocal(property);
       setProperties((prev) => [newProperty, ...prev]);
     } catch (error) {
@@ -229,6 +232,14 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteProperty = async (propertyId: string) => {
     try {
+      try {
+        await apiDelete(`/properties/${propertyId}`);
+        setProperties((prev) => prev.filter((p) => p.id !== propertyId));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local deleteProperty:", apiError);
+      }
+
       deletePropertyLocal(propertyId);
       setProperties(prev => prev.filter(p => p.id !== propertyId));
     } catch (error) {
@@ -239,9 +250,19 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProperty = async (propertyId: string, updates: Partial<Property>) => {
     try {
-      const updated = updatePropertyLocal(propertyId, updates);
-      if (updated) {
-        setProperties((prev) => prev.map((p) => (p.id === propertyId ? updated : p)));
+      // Try backend first
+      try {
+        const updatedApi = await apiPatch<any>(`/properties/${propertyId}`, updates);
+        const mapped = mapApiPropertyToProperty(updatedApi);
+        setProperties((prev) => prev.map((p) => (p.id === propertyId ? mapped : p)));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local updateProperty:", apiError);
+      }
+
+      const updatedLocal = updatePropertyLocal(propertyId, updates);
+      if (updatedLocal) {
+        setProperties((prev) => prev.map((p) => (p.id === propertyId ? updatedLocal : p)));
       }
     } catch (error) {
       console.error('Error updating property:', error);

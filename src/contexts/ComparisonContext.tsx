@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useAuth } from './AuthContext';
 import { toast } from "sonner";
 import { getComparisons, setComparisons, subscribeLocalDb } from "@/lib/localDb";
+import { apiGet, apiPost, apiDelete } from "@/lib/api";
 
 interface ComparisonContextType {
   comparisonList: string[];
@@ -35,6 +36,14 @@ export const ComparisonProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      try {
+        const apiItems = await apiGet<{ propertyId: string }[]>("/comparisons");
+        setComparisonList(apiItems.map(i => i.propertyId).slice(0, MAX_COMPARISON));
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local comparisons:", apiError);
+      }
+
       setComparisonList(getComparisons(user.id).slice(0, MAX_COMPARISON));
     } catch (error) {
       console.error('Error fetching comparison list:', error);
@@ -73,6 +82,19 @@ export const ComparisonProvider = ({ children }: { children: ReactNode }) => {
       if (!propertyId || !propertyId.trim()) {
         throw new Error('Invalid property ID');
       }
+      try {
+        await apiPost("/comparisons", { propertyId });
+        setComparisonList(prev => {
+          if (prev.includes(propertyId)) return prev;
+          const next = [...prev, propertyId].slice(0, MAX_COMPARISON);
+          return next;
+        });
+        toast.success("Added to comparison");
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local addToComparison:", apiError);
+      }
+
       const current = getComparisons(user.id);
       if (current.includes(propertyId)) {
         toast.info("Property already in comparison list");
@@ -99,6 +121,15 @@ export const ComparisonProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      try {
+        await apiDelete(`/comparisons/${propertyId}`);
+        setComparisonList(prev => prev.filter(id => id !== propertyId));
+        toast.success("Removed from comparison");
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local removeFromComparison:", apiError);
+      }
+
       const current = getComparisons(user.id);
       const next = current.filter((id) => id !== propertyId);
       setComparisons(user.id, next);
@@ -124,6 +155,17 @@ export const ComparisonProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      try {
+        // No dedicated clear endpoint; remove all individually
+        const current = await apiGet<{ propertyId: string }[]>("/comparisons");
+        await Promise.all(current.map(item => apiDelete(`/comparisons/${item.propertyId}`)));
+        setComparisonList([]);
+        toast.success("Comparison list cleared");
+        return;
+      } catch (apiError) {
+        console.warn("Falling back to local clearComparison:", apiError);
+      }
+
       setComparisons(user.id, []);
       setComparisonList([]);
       toast.success("Comparison list cleared");

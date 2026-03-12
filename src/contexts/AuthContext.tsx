@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getSession, signInWithPassword, createUser, signOut, subscribeLocalDb, type SessionUser } from '@/lib/localDb';
+import { subscribeLocalDb } from '@/lib/localDb';
+import { apiGet, apiPost } from "@/lib/api";
 
 export interface User {
   id: string;
@@ -21,26 +22,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mapSessionToUser = (session: SessionUser | null): User | null => {
-  if (!session) return null;
-  return {
-    id: session.id,
-    email: session.email,
-    name: session.name,
-    role: session.role,
-    provider: session.provider,
-  };
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Hydrate from local session + stay in sync with localDb changes
-    setUser(mapSessionToUser(getSession()));
-    setLoading(false);
-    const unsub = subscribeLocalDb(() => setUser(mapSessionToUser(getSession())));
+    const hydrate = async () => {
+      try {
+        const token = localStorage.getItem("ph:token");
+        if (token) {
+          const me = await apiGet<User>("/auth/me");
+          setUser(me);
+        }
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    hydrate();
+    const unsub = subscribeLocalDb(() => {});
     return unsub;
   }, []);
 
@@ -59,9 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: 'Password must be at least 6 characters' };
       }
 
-      const result = signInWithPassword(email, password);
-      if (!result.ok) return { success: false, error: result.error };
-      setUser(mapSessionToUser(result.user));
+      const result = await apiPost<{ token: string; user: User }>("/auth/login", { email, password });
+      localStorage.setItem("ph:token", result.token);
+      setUser(result.user);
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -88,9 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: 'Name must be at least 2 characters' };
       }
 
-      const result = createUser({ email, password, name, role: "user" });
-      if (!result.ok) return { success: false, error: result.error };
-      setUser(mapSessionToUser(result.user));
+      const result = await apiPost<{ token: string; user: User }>("/auth/signup", { email, password, name });
+      localStorage.setItem("ph:token", result.token);
+      setUser(result.user);
       return { success: true };
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -104,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      signOut();
+      localStorage.removeItem("ph:token");
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
