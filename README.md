@@ -59,9 +59,6 @@ cd server
 npm install
 ```
 
-Create `server/.env` based on `server/.env.example` and fill in your own values  
-(database connection string, JWT secret, client origin, etc.).
-
 Then run migrations and (optionally) seed mock data:
 
 ```bash
@@ -160,7 +157,7 @@ PropertyHub/
 │   ├── src/               # API source
 │   ├── prisma/            # Prisma schema & migrations
 │   ├── package.json       # Backend dependencies
-│   └── .env.example       # Backend env vars (sample)
+│   └── .env               # Backend env vars 
 ├── PROJECT_WORKFLOW.md    # Detailed architecture & workflows (may describe local mode)
 ├── README.md              # This file
 └── package.json           # Frontend/root dependencies
@@ -189,8 +186,6 @@ Keep all sensitive values only in `server/.env` (not in this README), for exampl
 - `DATABASE_URL` – full PostgreSQL connection string  
 - `CLIENT_ORIGIN` – allowed frontend origin  
 - `JWT_SECRET` – secret used to sign JWTs
-
-> **Note**: `server/.env` is already ignored via `.gitignore` and should never be committed.
 
 ## 📝 License
 
