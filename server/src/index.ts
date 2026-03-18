@@ -174,7 +174,7 @@ app.get("/admin/users", authMiddleware(true), async (_req: any, res) => {
 
 // ---------- AI (OpenRouter proxy) ----------
 
-app.post("/ai/chat", authMiddleware(false), async (req: any, res) => {
+app.post("/ai/chat", async (req: any, res) => {
   try {
     if (!OPENROUTER_API_KEY) {
       return res.status(503).json({ error: "AI service is not configured" });

@@ -81,11 +81,17 @@ const AIChatAssistant = () => {
       const response = await aiService.getSearchAssistance(userMessage, properties);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
+      const message =
+        error instanceof Error && /status 401/.test(error.message)
+          ? "Please login to use the AI assistant."
+          : error instanceof Error && /status 503/.test(error.message)
+          ? "AI is not configured on the server yet. Please add OPENROUTER_API_KEY on Render and redeploy."
+          : "Sorry, I encountered an error. Please try again in a moment.";
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again in a moment.',
+          content: message,
         },
       ]);
     } finally {
