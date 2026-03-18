@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProperties } from "@/contexts/PropertiesContext";
 import Navbar from "@/components/Navbar";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, CheckCircle, Clock, Users, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { apiGet } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ import {
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { properties, approveProperty, rejectProperty, deleteProperty } = useProperties();
+  const [users, setUsers] = useState<Array<{ id: string; email: string; name: string; role: string; createdAt: string }>>([]);
   
   const pendingCount = properties.filter(p => p.approvalStatus === "pending").length;
   const approvedCount = properties.filter(p => p.approvalStatus === "approved").length;
@@ -45,6 +47,27 @@ const AdminDashboard = () => {
     toast.success("Property deleted successfully!");
   };
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await apiGet<any[]>("/admin/users");
+        setUsers(
+          data.map((u) => ({
+            id: u.id,
+            email: u.email,
+            name: u.name,
+            role: u.role,
+            createdAt: u.createdAt,
+          }))
+        );
+      } catch (e) {
+        // Non-admins or when API is unavailable: keep empty.
+        setUsers([]);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const stats = [
     {
       title: "Total Properties",
@@ -66,7 +89,7 @@ const AdminDashboard = () => {
     },
     {
       title: "Total Users",
-      value: 2,
+      value: users.length,
       icon: Users,
       description: "Registered users",
     },
@@ -183,6 +206,35 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Registered Users</CardTitle>
+            <CardDescription>Users created in the database</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {users.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No users found (or you are not an admin).</p>
+            ) : (
+              <div className="space-y-3">
+                {users.slice(0, 20).map((u) => (
+                  <div key={u.id} className="flex items-center justify-between border rounded-lg p-4">
+                    <div>
+                      <p className="font-medium">{u.name}</p>
+                      <p className="text-sm text-muted-foreground">{u.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge>
+                    </div>
+                  </div>
+                ))}
+                {users.length > 20 && (
+                  <p className="text-xs text-muted-foreground">Showing first 20 users.</p>
+                )}
               </div>
             )}
           </CardContent>

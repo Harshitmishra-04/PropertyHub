@@ -9,6 +9,9 @@ function authHeaders() {
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
+    headers: {
+      ...authHeaders(),
+    },
   });
   if (!res.ok) {
     throw new Error(`GET ${path} failed with status ${res.status}`);

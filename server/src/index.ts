@@ -13,6 +13,8 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 4000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 app.use(
   cors({
@@ -146,6 +148,70 @@ app.get("/auth/me", authMiddleware(false), (req: any, res) => {
     name: user.name,
     role: user.role,
   });
+});
+
+// ---------- Admin ----------
+
+app.get("/admin/users", authMiddleware(true), async (_req: any, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        provider: true,
+        createdAt: true,
+      },
+    });
+    res.json(users);
+  } catch (error) {
+    console.error("GET /admin/users error:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// ---------- AI (OpenRouter proxy) ----------
+
+app.post("/ai/chat", authMiddleware(false), async (req: any, res) => {
+  try {
+    if (!OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: "AI service is not configured" });
+    }
+
+    const { messages, model } = req.body ?? {};
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "messages[] is required" });
+    }
+
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": CLIENT_ORIGIN,
+        "X-Title": "PropertyHub",
+      },
+      body: JSON.stringify({
+        model: typeof model === "string" && model.trim() ? model : "openai/gpt-3.5-turbo",
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("OpenRouter error:", response.status, text);
+      return res.status(502).json({ error: "AI provider error" });
+    }
+
+    const data: any = await response.json();
+    const content = data?.choices?.[0]?.message?.content ?? "";
+    res.json({ content });
+  } catch (error) {
+    console.error("POST /ai/chat error:", error);
+    res.status(500).json({ error: "Failed to get AI response" });
+  }
 });
 
 // ---------- Properties ----------

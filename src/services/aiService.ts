@@ -1,5 +1,4 @@
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+import { apiPost } from "@/lib/api";
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -17,31 +16,12 @@ export const aiService = {
    * Chat with AI assistant
    */
   async chat(messages: Message[]): Promise<string> {
-    if (!OPENROUTER_API_KEY) {
-      return "AI service is not configured. Please add VITE_OPENROUTER_API_KEY to your environment variables.";
-    }
-
     try {
-      const response = await fetch(OPENROUTER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'PropertyHub',
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo',
-          messages: messages,
-        }),
+      const data = await apiPost<{ content: string }>("/ai/chat", {
+        model: "openai/gpt-3.5-turbo",
+        messages,
       });
-
-      if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0]?.message?.content || 'No response from AI';
+      return data.content || "No response from AI";
     } catch (error) {
       console.error('AI Service Error:', error);
       throw error;
@@ -60,15 +40,6 @@ export const aiService = {
     },
     availableProperties: any[]
   ): Promise<PropertyRecommendation[]> {
-    if (!OPENROUTER_API_KEY) {
-      console.warn('AI service not configured. Returning mock recommendations.');
-      return availableProperties.slice(0, 3).map((prop, index) => ({
-        propertyId: prop.id,
-        reason: 'Featured property',
-        score: 100 - index * 10,
-      }));
-    }
-
     try {
       const prompt = `Given these user preferences: ${JSON.stringify(userPreferences)}
       And these available properties: ${JSON.stringify(availableProperties.map(p => ({

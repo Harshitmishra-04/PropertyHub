@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, Send, X, Loader2 } from 'lucide-react';
 import { aiService } from '@/services/aiService';
-import { mockProperties } from '@/data/mockProperties';
+import { useProperties } from "@/contexts/PropertiesContext";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -67,6 +67,7 @@ const AIChatAssistant = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { properties } = useProperties();
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -77,14 +78,14 @@ const AIChatAssistant = () => {
     setIsLoading(true);
 
     try {
-      const response = await aiService.getSearchAssistance(userMessage, mockProperties);
+      const response = await aiService.getSearchAssistance(userMessage, properties);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please make sure the AI service is configured with VITE_OPENROUTER_API_KEY.',
+          content: 'Sorry, I encountered an error. Please try again in a moment.',
         },
       ]);
     } finally {
