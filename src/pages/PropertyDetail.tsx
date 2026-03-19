@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import PropertyMap from "@/components/PropertyMap";
 import PropertyReviews from "@/components/PropertyReviews";
 import PropertyCard from "@/components/PropertyCard";
+import { apiGet } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,14 +35,41 @@ import {
 const PropertyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { properties, incrementViews, incrementEnquiries, deleteProperty } = useProperties();
+  const { properties, loading, incrementViews, incrementEnquiries, deleteProperty } = useProperties();
   const { addLead } = useLeads();
   const { user, isAdmin } = useAuth();
-  const property = properties.find((p) => p.id === id);
+  const propertyFromList = properties.find((p) => p.id === id);
+  const [property, setProperty] = useState<typeof propertyFromList | null>(propertyFromList || null);
   const [selectedImage, setSelectedImage] = useState(0);
   const { addToRecentlyViewed } = useRecentlyViewed();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addToComparison, isInComparison, removeFromComparison } = useComparison();
+
+  useEffect(() => {
+    setProperty(propertyFromList || null);
+  }, [propertyFromList]);
+
+  useEffect(() => {
+    const fetchOne = async () => {
+      if (!id) return;
+      if (propertyFromList) return;
+      try {
+        const apiProp = await apiGet<any>(`/properties/${id}`);
+        // map minimal shape to frontend (same key names Prisma uses)
+        const mapped = {
+          ...apiProp,
+          amenities: Array.isArray(apiProp.amenities) ? apiProp.amenities : [],
+          images: Array.isArray(apiProp.images) ? apiProp.images : [],
+          coordinates: typeof apiProp.coordinates === "object" ? apiProp.coordinates : { lat: 0, lng: 0 },
+          sellerInfo: typeof apiProp.sellerInfo === "object" ? apiProp.sellerInfo : {},
+        };
+        setProperty(mapped as any);
+      } catch {
+        // ignore; handled below
+      }
+    };
+    void fetchOne();
+  }, [id, propertyFromList]);
 
   const isPropertyOwner = property && user && (
     property.sellerInfo.email === user.email || 
@@ -56,6 +84,17 @@ const PropertyDetail = () => {
       incrementViews(id);
     }
   }, [id, addToRecentlyViewed, incrementViews]);
+
+  if (loading && !property) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground">Loading property...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
