@@ -197,9 +197,14 @@ const PropertyDetail = () => {
           <div className="lg:col-span-3">
             <div className="relative aspect-video overflow-hidden rounded-xl">
               <img
-                src={property.images[selectedImage]}
+                src={property.images?.[selectedImage] || property.image || "/placeholder.svg"}
                 alt={property.title}
                 className="h-full w-full object-cover"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                }}
               />
               <div className="absolute right-4 top-4 flex gap-2">
                 {canDelete && (
@@ -275,6 +280,11 @@ const PropertyDetail = () => {
                   src={image}
                   alt={`View ${index + 1}`}
                   className="h-full w-full object-cover"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
                 />
               </button>
             ))}
