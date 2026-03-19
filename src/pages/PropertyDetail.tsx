@@ -40,19 +40,28 @@ const PropertyDetail = () => {
   const { user, isAdmin } = useAuth();
   const propertyFromList = properties.find((p) => p.id === id);
   const [property, setProperty] = useState<typeof propertyFromList | null>(propertyFromList || null);
+  const [isFetchingProperty, setIsFetchingProperty] = useState(false);
+  const [didTryFetch, setDidTryFetch] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const { addToRecentlyViewed } = useRecentlyViewed();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addToComparison, isInComparison, removeFromComparison } = useComparison();
 
   useEffect(() => {
-    setProperty(propertyFromList || null);
+    // Only overwrite local property when the list actually has it.
+    // Avoid clearing to null during transient list refreshes (prevents flicker).
+    if (propertyFromList) {
+      setProperty(propertyFromList);
+    }
   }, [propertyFromList]);
 
   useEffect(() => {
     const fetchOne = async () => {
       if (!id) return;
       if (propertyFromList) return;
+      if (property) return;
+      if (didTryFetch) return;
+      setIsFetchingProperty(true);
       try {
         const apiProp = await apiGet<any>(`/properties/${id}`);
         // map minimal shape to frontend (same key names Prisma uses)
@@ -64,12 +73,16 @@ const PropertyDetail = () => {
           sellerInfo: typeof apiProp.sellerInfo === "object" ? apiProp.sellerInfo : {},
         };
         setProperty(mapped as any);
-      } catch {
-        // ignore; handled below
+      } catch (e) {
+        // If backend doesn't have it (or network error), we decide after loading completes.
+      }
+      finally {
+        setDidTryFetch(true);
+        setIsFetchingProperty(false);
       }
     };
     void fetchOne();
-  }, [id, propertyFromList]);
+  }, [id, propertyFromList, property, didTryFetch]);
 
   const isPropertyOwner = property && user && (
     property.sellerInfo.email === user.email || 
@@ -85,7 +98,7 @@ const PropertyDetail = () => {
     }
   }, [id, addToRecentlyViewed, incrementViews]);
 
-  if (loading && !property) {
+  if ((!property && (loading || isFetchingProperty)) || (!property && !didTryFetch && !propertyFromList)) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
