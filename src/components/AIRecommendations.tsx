@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "@/components/PropertyCard";
@@ -11,6 +11,7 @@ const AIRecommendations = () => {
   const { properties } = useProperties();
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const didAutoLoad = useRef(false);
 
   const loadRecommendations = async () => {
     setLoading(true);
@@ -49,9 +50,10 @@ const AIRecommendations = () => {
   };
 
   useEffect(() => {
-    if (Array.isArray(properties) && properties.length > 0) {
-      loadRecommendations();
-    }
+    if (!Array.isArray(properties) || properties.length === 0) return;
+    if (didAutoLoad.current) return;
+    didAutoLoad.current = true;
+    void loadRecommendations();
   }, [properties]);
 
   if (recommendations.length === 0 && !loading) {

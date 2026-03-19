@@ -41,8 +41,9 @@ export const aiService = {
     availableProperties: any[]
   ): Promise<PropertyRecommendation[]> {
     try {
+      const limited = Array.isArray(availableProperties) ? availableProperties.slice(0, 50) : [];
       const prompt = `Given these user preferences: ${JSON.stringify(userPreferences)}
-      And these available properties: ${JSON.stringify(availableProperties.map(p => ({
+      And these available properties: ${JSON.stringify(limited.map(p => ({
         id: p.id,
         title: p.title,
         price: p.price,
@@ -87,11 +88,12 @@ export const aiService = {
    * Get property search assistance
    */
   async getSearchAssistance(userQuery: string, properties: any[]): Promise<string> {
+    const limited = Array.isArray(properties) ? properties.slice(0, 50) : [];
     const messages: Message[] = [
       {
         role: 'system',
         content: `You are a helpful real estate assistant. Help users find properties based on their requirements. 
-        Available properties: ${JSON.stringify(properties.map(p => ({
+        Available properties: ${JSON.stringify(limited.map(p => ({
           id: p.id,
           title: p.title,
           price: p.price,

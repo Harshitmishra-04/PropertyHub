@@ -44,6 +44,8 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
           <img
             src={property.image || '/placeholder.svg'}
             alt={property.title || 'Property'}
+            loading="lazy"
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder.svg';
