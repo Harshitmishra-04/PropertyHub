@@ -96,7 +96,9 @@ const PropertyDetail = () => {
       addToRecentlyViewed(id);
       incrementViews(id);
     }
-  }, [id, addToRecentlyViewed, incrementViews]);
+    // Only run when the route id changes.
+    // Avoid nonstop re-runs caused by unstable function references in context.
+  }, [id]);
 
   if ((!property && (loading || isFetchingProperty)) || (!property && !didTryFetch && !propertyFromList)) {
     return (
@@ -180,11 +182,16 @@ const PropertyDetail = () => {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!id) return;
-    deleteProperty(id);
-    toast.success("Property deleted successfully!");
-    navigate("/");
+    try {
+      await deleteProperty(id);
+      toast.success("Property deleted successfully!");
+      navigate("/");
+    } catch (e) {
+      console.error("Delete failed:", e);
+      toast.error("Failed to delete property. Please try again.");
+    }
   };
 
   return (

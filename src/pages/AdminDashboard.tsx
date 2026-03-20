@@ -42,9 +42,14 @@ const AdminDashboard = () => {
     setRejectDialogOpen(null);
   };
 
-  const handleDelete = (propertyId: string) => {
-    deleteProperty(propertyId);
-    toast.success("Property deleted successfully!");
+  const handleDelete = async (propertyId: string) => {
+    try {
+      await deleteProperty(propertyId);
+      toast.success("Property deleted successfully!");
+    } catch (e) {
+      console.error("Delete failed:", e);
+      toast.error("Failed to delete property. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -197,7 +202,7 @@ const AdminDashboard = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(property.id)}>
+                            <AlertDialogAction onClick={() => void handleDelete(property.id)}>
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -288,7 +293,7 @@ const AdminDashboard = () => {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(property.id)}>
+                            <AlertDialogAction onClick={() => void handleDelete(property.id)}>
                             Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>

@@ -82,6 +82,19 @@ const PropertiesContext = createContext<PropertiesContextType | undefined>(undef
 
 // Helper function to convert API property (Prisma) to app property
 const mapApiPropertyToProperty = (apiProp: any): Property => {
+  const parseJsonArray = (value: any): string[] => {
+    if (Array.isArray(value)) return value as string[];
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const coordinates =
     typeof apiProp.coordinates === "object"
       ? apiProp.coordinates
@@ -116,11 +129,12 @@ const mapApiPropertyToProperty = (apiProp: any): Property => {
     type: apiProp.type || "sale",
     propertyType: apiProp.propertyType || "Apartment",
     description: apiProp.description || "",
-    amenities: Array.isArray(apiProp.amenities) ? apiProp.amenities : [],
-    images:
-      Array.isArray(apiProp.images) && apiProp.images.length > 0
-        ? apiProp.images
-        : [apiProp.image || "/placeholder.svg"],
+    amenities: parseJsonArray(apiProp.amenities),
+    images: (() => {
+      const parsedImages = parseJsonArray(apiProp.images);
+      if (parsedImages.length > 0) return parsedImages;
+      return [apiProp.image || "/placeholder.svg"];
+    })(),
     coordinates,
     approvalStatus: apiProp.approvalStatus || "pending",
     constructionStatus: apiProp.constructionStatus || "ready",
@@ -232,18 +246,20 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteProperty = async (propertyId: string) => {
     try {
-      try {
+      // If logged in, always try backend first.
+      // If backend fails (401/403/500), we should NOT silently fall back to local,
+      // otherwise admin thinks delete succeeded but nothing changes on the live DB.
+      if (user) {
         await apiDelete(`/properties/${propertyId}`);
         setProperties((prev) => prev.filter((p) => p.id !== propertyId));
         return;
-      } catch (apiError) {
-        console.warn("Falling back to local deleteProperty:", apiError);
       }
 
+      // Guest/unknown auth: fallback to local behavior.
       deletePropertyLocal(propertyId);
-      setProperties(prev => prev.filter(p => p.id !== propertyId));
+      setProperties((prev) => prev.filter((p) => p.id !== propertyId));
     } catch (error) {
-      console.error('Error deleting property:', error);
+      console.error("Error deleting property:", error);
       throw error;
     }
   };
