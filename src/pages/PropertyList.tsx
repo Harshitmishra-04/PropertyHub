@@ -52,6 +52,10 @@ const PropertyList = () => {
   };
 
   const filteredProperties = usePropertyFilters(typeFilteredProperties, allFilters);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, [searchFilters, sidebarFilters, viewMode]);
   
   if (loading) {
     return (

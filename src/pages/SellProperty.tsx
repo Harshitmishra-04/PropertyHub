@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import BackButton from "@/components/BackButton";
-import LocationPicker from "@/components/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -215,29 +214,6 @@ const SellProperty = () => {
 
     setErrors(newErrors);
     return !Object.values(newErrors).some(error => error !== '');
-  };
-
-  const handleLocationSelect = (lat: number, lng: number, address: string) => {
-    const parts = address.split(',');
-    const locality = parts[0]?.trim() || "";
-    const city = parts[parts.length - 1]?.trim() || "";
-    
-    setFormData(prev => ({
-      ...prev,
-      location: address,
-      locality: locality || prev.locality,
-      city: city || prev.city,
-      coordinates: { lat, lng },
-    }));
-
-    // Clear location error
-    if (errors.location) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.location;
-        return newErrors;
-      });
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -455,11 +431,16 @@ const SellProperty = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Location <span className="text-destructive">*</span></Label>
-                  <LocationPicker 
-                    onLocationSelect={handleLocationSelect}
-                    initialLat={formData.coordinates.lat}
-                    initialLng={formData.coordinates.lng}
+                  <Label htmlFor="location">Full Address / Location <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="location"
+                    placeholder="e.g., 100 Feet Road, Indiranagar, Bengaluru"
+                    value={formData.location}
+                    onChange={(e) => handleFieldChange('location', e.target.value)}
+                    onBlur={() => handleBlur('location')}
+                    className={cn(errors.location && "border-destructive")}
+                    required
+                    disabled={isSubmitting}
                   />
                   {errors.location && (
                     <p className="text-sm text-destructive flex items-center gap-1">
