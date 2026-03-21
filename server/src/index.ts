@@ -63,6 +63,19 @@ const createJwtForUser = (user: { id: string; email: string; name: string; role:
   );
 };
 
+const getOptionalUserFromRequest = async (req: any) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice("Bearer ".length);
+  try {
+    const payload: any = jwt.verify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    return user ?? null;
+  } catch {
+    return null;
+  }
+};
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -220,10 +233,20 @@ app.post("/ai/chat", async (req: any, res) => {
 app.get("/properties", async (req, res) => {
   try {
     const { type } = req.query;
+    const currentUser = await getOptionalUserFromRequest(req);
+    const where: any = {};
 
-    const where: any = {
-      approvalStatus: "approved",
-    };
+    // Guests: approved only
+    // Authenticated users: approved + own
+    // Admin: all
+    if (!currentUser) {
+      where.approvalStatus = "approved";
+    } else if (currentUser.role !== "admin") {
+      where.OR = [
+        { approvalStatus: "approved" },
+        { sellerId: currentUser.id },
+      ];
+    }
 
     if (type && typeof type === "string") {
       where.type = type;

@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Bed, Bath, Maximize, MapPin } from "lucide-react";
-import { mockProperties } from "@/data/mockProperties";
 import { Link } from "react-router-dom";
+import { useProperties } from "@/contexts/PropertiesContext";
+import { useComparison } from "@/contexts/ComparisonContext";
 
 interface ComparisonProperty {
   id: string;
@@ -27,13 +28,20 @@ interface PropertyComparisonProps {
 
 const PropertyComparison = ({ initialProperties = [], onClose }: PropertyComparisonProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialProperties);
+  const { properties } = useProperties();
+  const { removeFromComparison } = useComparison();
   
   const selectedProperties = selectedIds
-    .map(id => mockProperties.find(p => p.id === id))
+    .map(id => properties.find(p => p.id === id))
     .filter(Boolean) as ComparisonProperty[];
 
-  const removeProperty = (id: string) => {
+  const removeProperty = async (id: string) => {
     setSelectedIds(prev => prev.filter(pId => pId !== id));
+    try {
+      await removeFromComparison(id);
+    } catch {
+      // keep local UI state updated even if API fails
+    }
   };
 
   if (selectedProperties.length === 0) {
@@ -73,7 +81,7 @@ const PropertyComparison = ({ initialProperties = [], onClose }: PropertyCompari
                   size="icon"
                   variant="destructive"
                   className="absolute right-2 top-2"
-                  onClick={() => removeProperty(property.id)}
+                  onClick={() => void removeProperty(property.id)}
                 >
                   <X className="h-4 w-4" />
                 </Button>

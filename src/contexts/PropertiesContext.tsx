@@ -223,8 +223,8 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Location is required');
       }
 
-      // Try backend first
-      try {
+      // Logged-in users should persist to backend only
+      if (user) {
         const created = await apiPost<any>("/properties", {
           ...property,
           approvalStatus: "pending",
@@ -232,10 +232,9 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
         const mapped = mapApiPropertyToProperty(created);
         setProperties((prev) => [mapped, ...prev]);
         return;
-      } catch (apiError) {
-        console.warn("Falling back to local addProperty:", apiError);
       }
 
+      // Guest fallback (local-only mode)
       const newProperty = addPropertyLocal(property);
       setProperties((prev) => [newProperty, ...prev]);
     } catch (error) {
@@ -266,14 +265,11 @@ export const PropertiesProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProperty = async (propertyId: string, updates: Partial<Property>) => {
     try {
-      // Try backend first
-      try {
+      if (user) {
         const updatedApi = await apiPatch<any>(`/properties/${propertyId}`, updates);
         const mapped = mapApiPropertyToProperty(updatedApi);
         setProperties((prev) => prev.map((p) => (p.id === propertyId ? mapped : p)));
         return;
-      } catch (apiError) {
-        console.warn("Falling back to local updateProperty:", apiError);
       }
 
       const updatedLocal = updatePropertyLocal(propertyId, updates);
