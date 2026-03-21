@@ -85,8 +85,9 @@ const PropertyDetail = () => {
   }, [id, propertyFromList, property, didTryFetch]);
 
   const isPropertyOwner = property && user && (
-    property.sellerInfo.email === user.email || 
-    property.sellerInfo.id === user.id
+    property.sellerId === user.id ||
+    property.sellerInfo?.email === user.email || 
+    property.sellerInfo?.id === user.id
   );
   
   const canDelete = isAdmin || isPropertyOwner;

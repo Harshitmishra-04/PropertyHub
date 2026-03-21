@@ -377,9 +377,14 @@ app.delete("/properties/:id", authMiddleware(false), async (req: any, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    await prisma.property.delete({
-      where: { id },
-    });
+    // Delete dependent records first to avoid FK constraint failures.
+    await prisma.$transaction([
+      prisma.review.deleteMany({ where: { propertyId: id } }),
+      prisma.lead.deleteMany({ where: { propertyId: id } }),
+      prisma.favorite.deleteMany({ where: { propertyId: id } }),
+      prisma.comparison.deleteMany({ where: { propertyId: id } }),
+      prisma.property.delete({ where: { id } }),
+    ]);
     res.status(204).send();
   } catch (error) {
     console.error("DELETE /properties/:id error:", error);

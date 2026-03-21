@@ -30,6 +30,7 @@ export interface NeighborhoodInsights {
 
 export interface Property {
   id: string;
+  sellerId?: string;
   title: string;
   price: number;
   location: string;
@@ -117,6 +118,7 @@ const mapApiPropertyToProperty = (apiProp: any): Property => {
 
   return {
     id: apiProp.id,
+    sellerId: apiProp.sellerId || undefined,
     title: apiProp.title || "Untitled Property",
     price: Number(apiProp.price) || 0,
     location: apiProp.location || "",
