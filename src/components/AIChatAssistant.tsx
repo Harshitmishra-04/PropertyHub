@@ -87,6 +87,8 @@ const AIChatAssistant = () => {
           ? "Please login to use the AI assistant."
           : /status 503/.test(msg)
           ? "AI is not configured on the server yet. Add OPENROUTER_API_KEY on Render (not VITE_*) and redeploy."
+          : /status 402/.test(msg)
+          ? "OpenRouter credits are too low. Add credits at openrouter.ai/settings/credits, or set MAX_AI_OUTPUT_TOKENS lower on Render (e.g. 512) and redeploy."
           : /status 502/.test(msg)
           ? "The AI provider rejected the request (invalid key, model, or rate limit). Check Render logs for \"OpenRouter error\"."
           : /status 500/.test(msg)

@@ -41,7 +41,7 @@ export const aiService = {
     availableProperties: any[]
   ): Promise<PropertyRecommendation[]> {
     try {
-      const limited = Array.isArray(availableProperties) ? availableProperties.slice(0, 50) : [];
+      const limited = Array.isArray(availableProperties) ? availableProperties.slice(0, 20) : [];
       const prompt = `Given these user preferences: ${JSON.stringify(userPreferences)}
       And these available properties: ${JSON.stringify(limited.map(p => ({
         id: p.id,
@@ -88,8 +88,8 @@ export const aiService = {
    * Get property search assistance
    */
   async getSearchAssistance(userQuery: string, properties: any[]): Promise<string> {
-    // Keep payload small so OpenRouter doesn't reject oversized requests.
-    const limited = Array.isArray(properties) ? properties.slice(0, 30) : [];
+    // Keep payload small (input tokens + reserved max_tokens cost credits).
+    const limited = Array.isArray(properties) ? properties.slice(0, 15) : [];
     const summary = limited.map((p) => ({
       id: p.id,
       title: p.title,

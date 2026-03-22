@@ -22,6 +22,12 @@ const CLIENT_ORIGINS = (() => {
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+/** OpenRouter defaults to a very high max_tokens (e.g. 16384), which can exceed free-credit limits. */
+const MAX_AI_OUTPUT_TOKENS = (() => {
+  const n = parseInt(process.env.MAX_AI_OUTPUT_TOKENS || "1024", 10);
+  if (!Number.isFinite(n)) return 1024;
+  return Math.min(4096, Math.max(128, n));
+})();
 
 app.use(
   cors({
@@ -223,12 +229,19 @@ app.post("/ai/chat", async (req: any, res) => {
         model:
           typeof model === "string" && model.trim() ? model : "openai/gpt-4o-mini",
         messages,
+        max_tokens: MAX_AI_OUTPUT_TOKENS,
       }),
     });
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       console.error("OpenRouter error:", response.status, text);
+      if (response.status === 402) {
+        return res.status(402).json({
+          error:
+            "OpenRouter credits are too low for this request (or add credits). The server now caps output tokens — try again after redeploy.",
+        });
+      }
       return res.status(502).json({ error: "AI provider error" });
     }
 

@@ -49,6 +49,8 @@ A modern, full-featured real estate platform built with React, TypeScript, and V
 ```bash
 git clone https://github.com/yourusername/PropertyHub.git
 cd PropertyHub
+git clone https://github.com/yourusername/PropertyHub.git
+cd PropertyHub
 npm install
 ```
 
@@ -64,6 +66,28 @@ Then run migrations and (optionally) seed mock data:
 ```bash
 npx prisma migrate dev --name init
 npx prisma generate
+npm run prisma:seed   # optional, loads sample properties & reviews
+```
+
+Start the backend:
+
+```bash
+npm run prisma:seed   # optional, loads sample properties & reviews
+```
+
+Start the backend:
+
+```bash
+npm run prisma:seed   # optional, loads sample properties & reviews
+```
+
+Start the backend:
+
+```bash
+npm run prisma:seed   # optional, loads sample properties & reviews
+```
+
+```bash
 npm run prisma:seed   # optional, loads sample properties & reviews
 ```
 
