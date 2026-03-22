@@ -19,6 +19,16 @@ export async function apiGet<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function readJsonSafe(res: Response): Promise<unknown> {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text.slice(0, 500) };
+  }
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -30,7 +40,12 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`POST ${path} failed with status ${res.status}`);
+    const data = (await readJsonSafe(res)) as { error?: string } | null;
+    const detail =
+      data && typeof data === "object" && typeof data.error === "string"
+        ? ` — ${data.error}`
+        : "";
+    throw new Error(`POST ${path} failed with status ${res.status}${detail}`);
   }
   return res.json() as Promise<T>;
 }

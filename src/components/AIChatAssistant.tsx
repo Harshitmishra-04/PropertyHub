@@ -81,12 +81,19 @@ const AIChatAssistant = () => {
       const response = await aiService.getSearchAssistance(userMessage, properties);
       setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
+      const msg = error instanceof Error ? error.message : "";
       const message =
-        error instanceof Error && /status 401/.test(error.message)
+        /status 401/.test(msg)
           ? "Please login to use the AI assistant."
-          : error instanceof Error && /status 503/.test(error.message)
-          ? "AI is not configured on the server yet. Please add OPENROUTER_API_KEY on Render and redeploy."
-          : "Sorry, I encountered an error. Please try again in a moment.";
+          : /status 503/.test(msg)
+          ? "AI is not configured on the server yet. Add OPENROUTER_API_KEY on Render (not VITE_*) and redeploy."
+          : /status 502/.test(msg)
+          ? "The AI provider rejected the request (invalid key, model, or rate limit). Check Render logs for \"OpenRouter error\"."
+          : /status 500/.test(msg)
+          ? "Server error while calling AI. Check Render logs for POST /ai/chat."
+          : /Failed to fetch|NetworkError|Load failed/i.test(msg)
+          ? "Cannot reach the API (often CORS or wrong URL). On Vercel set VITE_API_URL to your Render API. On Render set CLIENT_ORIGIN to your exact site origin(s), comma-separated, e.g. https://your-app.vercel.app"
+          : `Sorry, I encountered an error. Please try again in a moment.${msg ? ` (${msg})` : ""}`;
       setMessages((prev) => [
         ...prev,
         {

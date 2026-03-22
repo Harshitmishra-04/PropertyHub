@@ -12,13 +12,25 @@ const prisma = new PrismaClient();
 
 const PORT = process.env.PORT || 4000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+/** Comma-separated list, e.g. "https://app.vercel.app,http://localhost:8080" */
+const CLIENT_ORIGINS = (() => {
+  const list = CLIENT_ORIGIN.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : ["http://localhost:5173"];
+})();
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 app.use(
   cors({
-    origin: CLIENT_ORIGIN,
+    origin: (origin, callback) => {
+      // Non-browser clients (curl, server-to-server) send no Origin
+      if (!origin) return callback(null, true);
+      if (CLIENT_ORIGINS.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   })
 );
@@ -198,16 +210,18 @@ app.post("/ai/chat", async (req: any, res) => {
       return res.status(400).json({ error: "messages[] is required" });
     }
 
+    const refererForOpenRouter = CLIENT_ORIGINS[0] || "http://localhost:5173";
     const response = await fetch(OPENROUTER_API_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": CLIENT_ORIGIN,
+        "HTTP-Referer": refererForOpenRouter,
         "X-Title": "PropertyHub",
       },
       body: JSON.stringify({
-        model: typeof model === "string" && model.trim() ? model : "openai/gpt-3.5-turbo",
+        model:
+          typeof model === "string" && model.trim() ? model : "openai/gpt-4o-mini",
         messages,
       }),
     });

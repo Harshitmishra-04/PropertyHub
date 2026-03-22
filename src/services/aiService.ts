@@ -18,7 +18,7 @@ export const aiService = {
   async chat(messages: Message[]): Promise<string> {
     try {
       const data = await apiPost<{ content: string }>("/ai/chat", {
-        model: "openai/gpt-3.5-turbo",
+        model: "openai/gpt-4o-mini",
         messages,
       });
       return data.content || "No response from AI";
@@ -88,20 +88,22 @@ export const aiService = {
    * Get property search assistance
    */
   async getSearchAssistance(userQuery: string, properties: any[]): Promise<string> {
-    const limited = Array.isArray(properties) ? properties.slice(0, 50) : [];
+    // Keep payload small so OpenRouter doesn't reject oversized requests.
+    const limited = Array.isArray(properties) ? properties.slice(0, 30) : [];
+    const summary = limited.map((p) => ({
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      location: p.location,
+      bedrooms: p.bedrooms,
+      type: p.type,
+      propertyType: p.propertyType,
+    }));
     const messages: Message[] = [
       {
         role: 'system',
-        content: `You are a helpful real estate assistant. Help users find properties based on their requirements. 
-        Available properties: ${JSON.stringify(limited.map(p => ({
-          id: p.id,
-          title: p.title,
-          price: p.price,
-          location: p.location,
-          bedrooms: p.bedrooms,
-          type: p.type,
-          propertyType: p.propertyType,
-        })))}`,
+        content: `You are a helpful real estate assistant. Help users find properties based on their requirements.
+Available properties (JSON): ${JSON.stringify(summary)}`,
       },
       {
         role: 'user',
