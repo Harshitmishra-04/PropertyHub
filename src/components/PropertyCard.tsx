@@ -38,15 +38,15 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
   };
 
   return (
-    <Link to={`/property/${property.id}`}>
-      <Card className="group overflow-hidden transition-all hover:shadow-lg">
-        <div className="relative aspect-[4/3] overflow-hidden">
+    <Link to={`/property/${property.id}`} className="block h-full">
+      <Card className="group flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-card border-border/50">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img
             src={property.image || '/placeholder.svg'}
             alt={property.title || 'Property'}
             loading="lazy"
             referrerPolicy="no-referrer"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }}

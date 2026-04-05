@@ -119,7 +119,7 @@ const AIChatAssistant = () => {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
         size="icon"
       >
         <MessageCircle className="h-6 w-6" />
@@ -128,7 +128,7 @@ const AIChatAssistant = () => {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-96 shadow-2xl">
+    <Card className="fixed bottom-6 right-6 w-96 shadow-2xl z-50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-lg">AI Property Assistant</CardTitle>
         <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>

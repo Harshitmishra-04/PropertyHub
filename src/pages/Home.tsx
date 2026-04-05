@@ -9,6 +9,7 @@ import { ArrowRight, Building2, Shield, TrendingUp } from "lucide-react";
 import heroImage from "@/assets/hero-property.jpg";
 import AIChatAssistant from "@/components/AIChatAssistant";
 import AIRecommendations from "@/components/AIRecommendations";
+import { motion } from "framer-motion";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -37,90 +38,134 @@ const Home = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
-        <div className="absolute inset-0">
-          <img
+      <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-black/40">
+        <div className="absolute inset-0 -z-10">
+          <motion.img
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
             src={heroImage}
             alt="Hero"
-            className="h-full w-full object-cover opacity-20"
+            className="h-full w-full object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/60" />
         </div>
-        <div className="container relative mx-auto px-4 py-20 md:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="mb-6 text-4xl font-bold text-primary-foreground md:text-6xl">
-              Find Your Dream Property
-            </h1>
-            <p className="mb-8 text-lg text-primary-foreground/90 md:text-xl">
-              Search from thousands of properties available for sale and rent across India
-            </p>
-            <div className="mx-auto max-w-4xl">
+        <div className="container relative mx-auto px-4 z-10 w-full">
+          <div className="mx-auto max-w-4xl text-center flex flex-col items-center bg-black/30 p-8 md:p-16 rounded-[3rem] backdrop-blur-md border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="mb-6 text-5xl font-extrabold tracking-tight text-white md:text-7xl lg:text-8xl drop-shadow-2xl"
+            >
+              Discover Your <br className="hidden md:block"/> <span className="text-primary italic font-light">Dream Property</span>
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mb-10 text-lg text-white/90 md:text-2xl font-light max-w-2xl drop-shadow"
+            >
+              Explore thousands of premier properties for sale and rent across India.
+            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="w-full"
+            >
               <SearchBar onSearch={handleSearch} variant="hero" />
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="border-b bg-muted/30 py-12">
+      <section className="bg-background py-20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div className="flex flex-col items-center text-center">
-              <Building2 className="mb-3 h-12 w-12 text-primary" />
-              <div className="text-3xl font-bold text-foreground">10,000+</div>
-              <div className="text-muted-foreground">Properties Listed</div>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <Shield className="mb-3 h-12 w-12 text-primary" />
-              <div className="text-3xl font-bold text-foreground">100%</div>
-              <div className="text-muted-foreground">Verified Listings</div>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <TrendingUp className="mb-3 h-12 w-12 text-primary" />
-              <div className="text-3xl font-bold text-foreground">50,000+</div>
-              <div className="text-muted-foreground">Happy Customers</div>
-            </div>
+            {[
+              { icon: Building2, count: "10,000+", label: "Properties Listed" },
+              { icon: Shield, count: "100%", label: "Verified Listings" },
+              { icon: TrendingUp, count: "50,000+", label: "Happy Customers" }
+            ].map((stat, i) => (
+               <motion.div 
+                 key={i}
+                 initial={{ opacity: 0, y: 20 }}
+                 whileInView={{ opacity: 1, y: 0 }}
+                 viewport={{ once: true }}
+                 transition={{ delay: i * 0.1, duration: 0.5 }}
+                 className="flex flex-col items-center text-center p-6 rounded-2xl bg-muted/50 border border-border/50 hover:bg-muted/80 transition-colors"
+               >
+                 <stat.icon className="mb-4 h-12 w-12 text-primary" />
+                 <div className="text-4xl font-bold text-foreground mb-2">{stat.count}</div>
+                 <div className="text-muted-foreground font-medium">{stat.label}</div>
+               </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       <AIRecommendations />
 
-      <section className="py-16 bg-muted/30">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="mb-10 flex items-center justify-between">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4"
+          >
             <div>
-              <h2 className="text-3xl font-bold text-foreground">Featured Properties</h2>
-              <p className="mt-2 text-muted-foreground">
-                Handpicked properties just for you
+              <h2 className="text-4xl font-bold text-foreground tracking-tight">Featured Properties</h2>
+              <p className="mt-3 text-lg text-muted-foreground max-w-2xl">
+                Handpicked premium properties curated explicitly for your highly refined taste.
               </p>
             </div>
-            <Button variant="outline" asChild>
+            <Button variant="outline" className="rounded-full px-6" asChild>
               <Link to="/buy">
                 View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {approvedProperties.slice(0, 3).map((property) => (
-              <PropertyCard key={property.id} property={property} />
+          </motion.div>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {approvedProperties.slice(0, 3).map((property, idx) => (
+              <motion.div
+                key={property.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1, duration: 0.5 }}
+              >
+                <PropertyCard property={property} />
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-gradient-to-r from-primary to-primary/80 py-16 text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-3xl font-bold">Ready to Find Your Perfect Home?</h2>
-          <p className="mb-8 text-lg opacity-90">
-            Join thousands of happy homeowners who found their dream property with us
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button size="lg" variant="secondary" asChild>
+      <section className="relative py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-primary z-0" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay z-0" />
+        <div className="container relative mx-auto px-4 text-center z-10 text-primary-foreground">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="mb-6 text-4xl md:text-5xl font-bold tracking-tight">Ready to Find Your Perfect Home?</h2>
+            <p className="mb-10 text-xl opacity-90 max-w-2xl mx-auto font-light">
+              Join thousands of happy homeowners who found their dream property with us.
+            </p>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row mt-8">
+            <Button size="lg" variant="secondary" className="rounded-full px-8 h-14 text-lg hidden md:flex" asChild>
               <Link to="/buy">Browse Properties</Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
+            <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
               <Link to="/sell">List Your Property</Link>
             </Button>
           </div>
+          </motion.div>
         </div>
       </section>
 
