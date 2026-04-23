@@ -93,7 +93,7 @@ const Home = () => {
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
             </div>
-            <span className="text-sm font-bold">Top Rated Agency</span>
+            <span className="text-sm font-bold text-slate-800">Top Rated Agency</span>
           </motion.div>
 
           <motion.div
@@ -110,8 +110,8 @@ const Home = () => {
               <Shield className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-sm font-bold">100% Secure</div>
-              <div className="text-xs text-muted-foreground">Verified Properties</div>
+              <div className="text-sm font-bold text-slate-800">100% Secure</div>
+              <div className="text-xs text-slate-500">Verified Properties</div>
             </div>
           </motion.div>
 
