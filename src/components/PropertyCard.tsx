@@ -39,7 +39,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
 
   return (
     <Link to={`/property/${property.id}`} className="block h-full">
-      <Card className="group flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-card border-border/50">
+      <Card className="group flex flex-col h-full overflow-hidden transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] hover:-translate-y-4 bg-card border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <img
             src={property.image || '/placeholder.svg'}
